@@ -1,0 +1,235 @@
+---
+title: "Titanic Survival Story"
+author: "Liju Robin George and Jayashankar Malepati"
+date: "20 October 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+
+setwd("D:/MS/DA/assign 3")
+train <- read.csv('train.csv')
+str(train)
+
+```
+
+
+###Descriptive Statistics of Titanic Dataset
+
+The part of Statistics with the objective to describe and summarize sets of data. For that, measures are used, like the famous mean, or average.
+
+
+
+```{r train Descriptive Statistics, message=FALSE, warning=FALSE}
+
+#Variables in the dataset
+names(train)
+
+#Number of variables in the dataset
+length(train)
+
+#Number of observations(maximum) in a variable in the dataset
+length(train$PassengerId)
+
+```
+
+In our dataset Titanic, we have 12 variables and 891 maximum observations in a variable of the data. Some of the variables do not have all the observations. 
+
+The variables include, PassengerID, Survived Class, Passenger Class, Name of the Passenger, Sex, Age, Siblings, Parents to children, Ticker Number, Fare, Cabin and the City from which embarked on the ship. 
+
+When we discuss about the descriptive statistics, the variables like Age and Fare have more sense when compared to the other variables. As other variables are categorical or classified numbers. 
+
+In the case of Age variable, we have 891 total observations, but we have age information about 714 passengers only. Now the descriptive statistics of the Age variable include:
+
+```{r train Summary Stats of Age, message=FALSE, warning=FALSE}
+
+#Finding the summary statistics of a particular variable
+summary(train$Age)
+```
+
+Number of observations: 714
+
+Minimum age of any passenger is: 0.42
+
+Maximum age of any passenger is: 80.00
+
+Mean age is: 29.70
+
+Median age is: 28.00
+
+First Quartile Age: 20.12
+
+Third Quartile Age: 38.0
+
+```{r train Distribution of Age, message=FALSE, warning=FALSE}
+
+#Displaying the Frequency Distribution of the Age Variable
+hist(train$Age, xlim = c(0,100), ylim = c(0,300), xlab = "Age", ylab = "Number of Passengers", main = "Freqency Distribution", breaks = 10)
+
+#Displaying the Boxplot of Age Variable
+boxplot(train$Age, xlab = "Age")
+
+```
+
+
+In the case of Fare variable, again we have 891 observations and some of the observations includes fare for a family or multiple passengers, so the fare is sum of all the fares of particular family. Some of them boarded without paying any fare as well. So the descriptive statistics of the Fare variable include:
+
+```{r train Summary Stats of Fare, message=FALSE, warning=FALSE}
+#Finding the summary statistics of a particular variable
+summary(train$Fare)
+
+```
+
+
+Number of observations: 891
+
+Minimum Fare: 0.00
+
+Maximum Fare: 512.30
+
+Mean Fare: 32.30
+
+Median Fare: 14.45
+
+First Quartile: 7.91
+
+Third Quartile: 31.00
+
+Let us now see the proportion of children and adults who survived. Inorder to do so, we create a new column for aggregation called Child, which will have values as 1 if age is less than 18 and 0 if age is greater than or equal to 18. This indicates that we are considering kids to be less than 18 years of age.
+
+```{r train Proportion of Adults and Children who survived}
+#Let us now aggregate and create a proportion of the adults and children who survived
+#Creating ranges of age < 18 as children and adults otherwise 
+train$Child <- 0
+train$Child[train$Age < 18] <- 1
+table(train$Child)
+
+#proportion of adults and chilren who died based on gender
+aggregate(Survived ~ Child + Sex, data=train, FUN=function(x){sum(x)/length(x)})
+
+```
+
+As seen above, we can observe that even in children the female population has a considerable survival rate. Of course, the male children also have a higher survial rate than the male adults. This small but simple aggregation in itself tells a whole lot. A lot of adult men made sacrifices to get the women and children to safety and their sacrifices didn't go in vain.
+
+Let us now observe the distribution of the Fare. We can check the histogram and a box plot for the same. We have also performed a custom analysis below this. The Fare distribution clearly shows that majority of the passengers paid for cheaper tickets, suggesting the economic standpoint of the majority crowd. 
+
+
+```{r train Distribution of Fare, message=FALSE, warning=FALSE}
+
+#Displaying the Frequency Distribution of the Fare Variable
+hist(train$Fare, xlim = c(0,300), ylim = c(0,600),xlab = "Fare", ylab = "Number of Passengers", breaks = 24, main = "Freqency Distribution")
+
+#Displaying the Boxplot of Fare Variable
+boxplot(train$Fare, xlab ="Fare")
+
+```
+Would fare and class have anything to do with survival? Let us see:
+
+Below we have created custom bins to make a simpler fare range, less than 10$ : Between 10$ (inclusive) and 20$ : Between 20$ (inclusive) and 30$ : finally inclusive and above of 30$ 
+
+```{r train Fare and Class on Survival, message=FALSE, warning=FALSE}
+
+#checking relation of fares and class on survival by creating the ranges
+train$FareBins <- '30+'
+train$FareBins[train$Fare < 30 & train$Fare >= 20] <- '20-30'
+train$FareBins[train$Fare < 20 & train$Fare >= 10] <- '10-20'
+train$FareBins[train$Fare < 10] <- '<10'
+
+#aggregating on class and fare and creating a proportion
+aggregate(Survived ~ FareBins+ Pclass + Sex, data=train, FUN=function(x){sum(x)/length(x)})
+
+```
+Yet again, we observe that the female population have survived more than the male in any class or fare range. However, there is one peculiar point, the females in class 3 and who have paid the most have a lesser survival rate than the others. Why would this have happened? Factors maybe due to lack of mobility or location of cabins. Maybe their cabins were not close to the exit routes.
+
+A vast majority of Passengers were from the class 3 and most of them died, especially the men.
+
+```{r train Females and Male Distribution for classes, message=FALSE, warning=FALSE}
+#Survival by Passenger Class and Gender
+barchart <- ggplot(train, aes(as.factor(Pclass), fill=as.factor(Survived)))+geom_bar() + facet_grid(~Sex)
+
+barchart+xlab("Passenger Class")+ylab("Number of Passengers")+ggtitle("Survival by Passenger Class and Number")+scale_fill_discrete(name = "", labels = c("Died", "Survived"))
+
+```
+
+Also, an interesting point is that females on an average seem younger than males. So the men were more mature and older and might have been helping to reduce casuality as much as possible by giving priority to the opposite sex and children.
+
+```{r train Females and Male Distribution, message=FALSE, warning=FALSE}
+
+# females look on average yourger than males
+ggplot(train, aes(x = Sex, y = Age)) + stat_boxplot(geom = "errorbar", width = 0.3) + geom_boxplot()
+
+
+```
+
+We can observe however that middle aged women had a higher survival rate than older or younger women as seen below. These can be observed for even across classes. Which again suggests the possibility of middle aged women having more mental and physical fortitude than younger or older women. Or maybe they were given more priority and the younger women sacrificed themselves. Also, note that the 1st class has considerably older population than the rest of the classes. That can be confirmed in the whisker plot below.
+
+```{r train Sex Age and Survival Distribution based on class, message=FALSE, warning=FALSE}
+
+# females look on average yourger than males
+ggplot(train, aes(Sex, Survived, color = Survived, size=Age)) + geom_point() + facet_wrap(~Pclass)
+
+# interestingly 1st class population is considerably older than the rest. This might be a
+# potential confounder!
+ggplot(train, aes(x = Pclass, y = Age)) + stat_boxplot(geom = "errorbar", width = 0.3) + geom_boxplot() + facet_grid(~Pclass)
+
+```
+
+Moving on, let us analyse whether the region from where the people embarked had any relation to the survival rates.
+We do this by building violin plots between Embarked and Sex based on Age and who survived. Before we do this, there were two passengers who did not have any Embarked location specified, let us remove them and created an intermediary data set to create the plots on. 
+
+```{r train Violin and Facet Grid Plots together, message=FALSE, warning=FALSE}
+#Data Cleaning for Embarked
+which(train$Embarked == "")
+train_clean = subset(train, PassengerId != 62 & PassengerId != 830)
+
+#Violin plots for embarked location and survival rates
+voilinEmb <- ggplot(train_clean, aes(x=Sex, y=Age, fill=as.factor(Survived))) + geom_violin(trim = FALSE) + facet_grid(~Embarked)
+voilinEmb+scale_fill_discrete(name = "", labels = c("Died", "Survived"))
+
+```
+
+We can observe the following points from the above plots:
+
+1. No male from location Q survived. That seems quite strange! The Age did not play much of a factor, as it is somewhat a uniform distribution. Does that mean males from location Q were more actively involved in helping the others survive? Were they the ones who put others before themselves? This can suggest that males from that location were much more braver and courageous. Or maybe a non-gallant explanation of there being less number of males from Q and all of them died.
+
+2. The plots yet again suggest the higher survival rate in middle age women even for differnt locations. 
+
+3. There were however very few old females from location Q. 
+
+4. The females from C and S had an approximately even distribution of survial and death rates.
+
+5. There were considerable amount of male children who survived from location S.
+
+We have also done a five variable plot to observe all the Emabrked status based on class, sex , fares and number of passengers. We have used our previous FareBins for this purpose. A lot of people in class 3 died irrespective of the fares they paid. They were from location Q and S. A lot of female in class 1 survived and they paid higher fares. As seen before, Class 3 cabins might have been in remote locations without proper access to exit routes. It is also interesting to note that both the passengers with id 62 and 830 for whom we didnt have the embarked locations paid a higher fare, survived, were both in the first class and were females.
+
+```{r train  Facet Grid Plots, message=FALSE, warning=FALSE}
+
+ggplot(train, aes(Sex, Embarked, color= Survived, size=FareBins)) + geom_point() + facet_wrap(~Pclass)
+
+```
+Let us now look at survival rates based on family sizes. We can do this by taking into consideration the variables SibSp, which gives the count of siblings and spouse for a passenger and Parch, which gives the count of parents and chidren for a passenger.
+
+Inorder to find the family count we create a new column for family size, called Fsize, by taking SibSp+Parch+1, here 1 is for the passenger himself/herself.
+
+We then plot a histogram based on the data, showing the survival rate distribution based on family size.
+
+```{r train histogram for family size vs survival rates, message=FALSE, warning=FALSE}
+#build Family Size column Fsize
+train$Fsize <- train$SibSp + train$Parch + 1
+
+histFamily <- ggplot(train, aes(x =Fsize, fill=as.factor(Survived))) + geom_histogram(bins=30)
+
+histFamily+xlab("Family Size")+ylab("Number of Passengers")+ggtitle("Survival rate vs Family Size distribution")+scale_fill_discrete(name = "", labels = c("Died", "Survived"))
+```
+
+It is quite interesting to note from the above plot that majority of the people were single and most of the single people died. As with family sizes between 2 and 4, there is an even distribution of survival and deaths. However, as family size increased the death ratio increased. Of course, there were fewer groups with large family sizes, but the fact still remain that they were unable to survive. This may be due to a possibility that everyone in the family were sticking together or were trying to help each other and in the process were unable to survive. 
+
+
+## Conclusion
+
+This analysis has really brought to light points that one would have never found out by just a basic scan of the data. Some of the variables like Class, Age, Sex, Family Size, Emabarked seemed to influence the survival rates to a greater extent than the other variables. The out of the ordinary behavior of certain points like Embarked and Class draws interesting and curious questions. The analysis also helped to suggest the possible mental states of the people in the incident. It is a morbid data set, but has an extremely good learning experience associated with it. 
+
+The plots and the tools are an amazing way to vizualize and analyse the data. Numbers never lie, but numbers represented visually makes the truth more beautiful. This is the power of classical statistics methods combining with powerful tools like R.
